@@ -20,18 +20,31 @@ from tqdm import tqdm
 
 from eye_state_model import EyeStateCNN
 from eye_state_dataset import get_dataloaders, get_class_weights
+torch.set_float32_matmul_precision('high')
 
 
-# ── Config ─────────────────────────────────────────────────────────────────────
+# # ── Config ─────────────────────────────────────────────────────────────────────
+# SPLITS_DIR    = "data/splits"
+# MODEL_SAVE    = "models/drowsiness_cnn_best.pth"
+# CURVES_SAVE   = "outputs/training_curves.png"
+
+# EPOCHS        = 30
+# BATCH_SIZE    = 64
+# LR            = 3e-4
+# EARLY_STOP    = 10       # patience epochs
+# DEVICE        = "cuda" if torch.cuda.is_available() else "cpu"
+
+# ── Config — tuned for RTX 3050 (4GB VRAM) + 16GB RAM ─────────────────────────
 SPLITS_DIR    = "data/splits"
 MODEL_SAVE    = "models/drowsiness_cnn_best.pth"
 CURVES_SAVE   = "outputs/training_curves.png"
 
 EPOCHS        = 30
-BATCH_SIZE    = 64
+BATCH_SIZE    = 64        # safe for 4GB VRAM — increase to 128 if no OOM error
 LR            = 3e-4
-EARLY_STOP    = 10       # patience epochs
-DEVICE        = "cuda" if torch.cuda.is_available() else "cpu"
+EARLY_STOP    = 10
+NUM_WORKERS   = 4         # 16GB RAM → 4 workers fine
+DEVICE        = "cuda"    # force CUDA — you have RTX 3050, always use it
 
 
 # ── Training functions ─────────────────────────────────────────────────────────
@@ -110,12 +123,8 @@ def main():
     # Model
     model = EyeStateCNN().to(DEVICE)
 
-    # Compile for speed (PyTorch 2.0+)
-    try:
-        model = torch.compile(model)
-        print("torch.compile() enabled — ~10–30% speed boost")
-    except Exception:
-        print("torch.compile() not available — continuing without it")
+    # torch.compile() disabled — requires Triton (not supported on Windows)
+    print("Running in eager mode — works perfectly on Windows")
 
     # Loss with class weighting
     weights   = get_class_weights(f"{SPLITS_DIR}/train.csv").to(DEVICE)

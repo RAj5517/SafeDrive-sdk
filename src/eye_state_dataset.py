@@ -30,7 +30,7 @@ def get_train_transforms():
         A.HorizontalFlip(p=0.5),
         A.RandomBrightnessContrast(brightness_limit=0.2, contrast_limit=0.2, p=0.7),
         A.GaussianBlur(blur_limit=(3, 3), p=0.2),
-        A.GaussNoise(var_limit=(5.0, 20.0), p=0.2),
+        A.GaussNoise(p=0.2),
         A.Rotate(limit=15, p=0.3),
     ])
 
