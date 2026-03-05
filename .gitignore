@@ -1,0 +1,70 @@
+# ─── Python ───────────────────────────────────────────────
+__pycache__/
+*.py[cod]
+*.pyo
+*.egg-info/
+dist/
+build/
+*.egg
+.eggs/
+
+# ─── Environment ──────────────────────────────────────────
+.env
+.env.local
+venv/
+env/
+.venv/
+
+# ─── Data — NEVER commit raw datasets ─────────────────────
+data/mrl_eye/
+data/cew/
+data/combined/
+data/splits/
+*.zip
+*.tar.gz
+*.bz2
+
+# ─── Model weights — host on HuggingFace Hub instead ──────
+models/*.pth
+models/*.pt
+models/*.dat
+models/*.xml
+
+# ─── Notebooks auto-save ──────────────────────────────────
+.ipynb_checkpoints/
+*.ipynb_checkpoints
+
+# ─── Outputs (regenerate anytime) ─────────────────────────
+outputs/*.png
+outputs/*.mp4
+outputs/*.avi
+outputs/*.jpg
+
+# ─── Audio (add your own alarm.wav) ───────────────────────
+sounds/*.wav
+sounds/*.mp3
+
+# ─── OS ───────────────────────────────────────────────────
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# ─── IDE ──────────────────────────────────────────────────
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# ─── Profiling ────────────────────────────────────────────
+*.prof
+profile_output*
+
+# ─── Logs ─────────────────────────────────────────────────
+*.log
+logs/
+
+# Keep these empty folder markers
+!data/.gitkeep
+!models/.gitkeep
+!sounds/.gitkeep
+!outputs/.gitkeep
