@@ -1,11 +1,14 @@
 """
 setup.py
 ────────
-PyPI packaging config for safedrive-sdk.
+PyPI package config for safedrive-ai v0.1.0
 
-Publish to PyPI:
-    python setup.py sdist bdist_wheel
-    pip install twine
+Install:
+    pip install safedrive-ai
+
+Publish:
+    pip install build twine
+    python -m build
     twine upload dist/*
 """
 
@@ -15,31 +18,52 @@ with open("README.md", "r", encoding="utf-8") as f:
     long_description = f.read()
 
 setup(
-    name="safedrive-sdk",
-    version="0.1.0",
-    author="Your Name",
-    author_email="your@email.com",
-    description="Real-time driver drowsiness detection SDK",
-    long_description=long_description,
-    long_description_content_type="text/markdown",
-    url="https://github.com/YOUR_USERNAME/safedrive-sdk",
-    packages=find_packages(),
-    python_requires=">=3.10",
-    install_requires=[
+    name            = "safedrive-ai",
+    version         = "0.1.0",
+    author          = "SafeDrive AI",
+    description     = "Real-time driver drowsiness detection SDK",
+    long_description= long_description,
+    long_description_content_type = "text/markdown",
+    url             = "https://github.com/yourusername/safedrive-ai",
+
+    packages        = find_packages(),
+    python_requires = ">=3.10",
+
+    install_requires = [
         "opencv-python>=4.8.0",
-        "mediapipe>=0.10.7",
+        "mediapipe>=0.10.0",
         "torch>=2.0.0",
         "torchvision>=0.15.0",
         "numpy>=1.24.0",
-        "scipy>=1.11.0",
-        "pygame>=2.5.0",
+        "albumentations>=1.3.0",
     ],
-    classifiers=[
+
+    extras_require = {
+        "yolo": [
+            "ultralytics>=8.0.0",   # YOLOv8 — added in v0.2.0
+        ],
+        "dev": [
+            "pytest",
+            "twine",
+            "build",
+        ],
+    },
+
+    classifiers = [
         "Programming Language :: Python :: 3",
+        "Programming Language :: Python :: 3.10",
+        "Programming Language :: Python :: 3.11",
+        "Programming Language :: Python :: 3.12",
         "License :: OSI Approved :: MIT License",
         "Operating System :: OS Independent",
         "Topic :: Scientific/Engineering :: Artificial Intelligence",
-        "Topic :: Scientific/Engineering :: Image Recognition",
+        "Topic :: Software Development :: Libraries :: Python Modules",
+        "Intended Audience :: Developers",
     ],
-    keywords="drowsiness detection driver safety computer vision eye tracking",
+
+    keywords = [
+        "drowsiness detection", "driver monitoring",
+        "eye tracking", "computer vision", "mediapipe",
+        "yolo", "deep learning", "safety", "automotive"
+    ],
 )
