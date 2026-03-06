@@ -55,6 +55,25 @@ desktop.ini
 *.swp
 *.swo
 
+# Dataset — never commit images
+data/
+*.png
+*.jpg
+*.jpeg
+
+# Model weights — too large for git
+models/*.pth
+models/*.task
+
+# Python
+__pycache__/
+*.pyc
+.env
+
+# Logs
+*.log
+logs/
+
 # ─── Profiling ────────────────────────────────────────────
 *.prof
 profile_output*

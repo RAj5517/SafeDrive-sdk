@@ -24,52 +24,36 @@ MIN_ROI_SIZE = 10          # Skip if eye ROI smaller than this (face too far)
 
 
 def extract_eye_roi(frame: np.ndarray, eye_points: np.ndarray) -> np.ndarray | None:
-    """
-    Extract and preprocess a single eye ROI from a frame.
-
-    Args:
-        frame:      BGR frame from OpenCV (H, W, 3)
-        eye_points: np.array (6, 2) — pixel coordinates of eye landmarks
-
-    Returns:
-        np.array (64, 64) grayscale float32 normalized [0, 1]
-        or None if ROI is too small / out of bounds
-    """
     h, w = frame.shape[:2]
 
-    # Bounding box from landmark min/max
-    x_min = int(np.min(eye_points[:, 0]))
-    x_max = int(np.max(eye_points[:, 0]))
-    y_min = int(np.min(eye_points[:, 1]))
-    y_max = int(np.max(eye_points[:, 1]))
+    # Use eye CENTER + fixed crop size
+    # Much more reliable than tight bounding box (eye height is only 4-8px)
+    cx = float(np.mean(eye_points[:, 0]))
+    cy = float(np.mean(eye_points[:, 1]))
 
-    # Sanity check — eye too small (face far from camera)
-    if (x_max - x_min) < MIN_ROI_SIZE or (y_max - y_min) < MIN_ROI_SIZE:
+    # Eye width from landmarks → scale up for context
+    eye_w = float(np.max(eye_points[:, 0]) - np.min(eye_points[:, 0]))
+
+    # If landmarks are garbage (face too far), eye_w will be tiny
+    if eye_w < 8:
         return None
 
-    # Add padding
-    eye_w = x_max - x_min
-    eye_h = y_max - y_min
-    pad_x = int(eye_w * PADDING_RATIO)
-    pad_y = int(eye_h * PADDING_RATIO)
+    # Crop box = 2.5× eye width, centered on eye
+    half = int(eye_w * 1.25)
+    half = max(half, 20)   # minimum 40×40 crop regardless
 
-    x1 = max(0, x_min - pad_x)
-    y1 = max(0, y_min - pad_y)
-    x2 = min(w, x_max + pad_x)
-    y2 = min(h, y_max + pad_y)
+    x1 = max(0, int(cx) - half)
+    x2 = min(w, int(cx) + half)
+    y1 = max(0, int(cy) - half)
+    y2 = min(h, int(cy) + half)
 
-    # Crop
     roi = frame[y1:y2, x1:x2]
-
     if roi.size == 0:
         return None
 
-    # Grayscale → resize → normalize
-    gray = cv2.cvtColor(roi, cv2.COLOR_BGR2GRAY)
+    gray    = cv2.cvtColor(roi, cv2.COLOR_BGR2GRAY)
     resized = cv2.resize(gray, TARGET_SIZE, interpolation=cv2.INTER_AREA)
-    normalized = resized.astype(np.float32) / 255.0
-
-    return normalized
+    return resized.astype(np.float32) / 255.0
 
 
 def extract_both_eyes(frame: np.ndarray,
