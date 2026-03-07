@@ -22,7 +22,6 @@ import cv2
 import numpy as np
 import os
 
-# MediaPipe new Tasks API
 import mediapipe as mp
 from mediapipe.tasks import python as mp_python
 from mediapipe.tasks.python import vision as mp_vision
@@ -30,7 +29,8 @@ from mediapipe.tasks.python import vision as mp_vision
 LEFT_EYE_IDX  = [362, 385, 387, 263, 373, 380]
 RIGHT_EYE_IDX = [33,  160, 158, 133, 153, 144]
 
-TASK_MODEL_PATH = "models/face_landmarker.task"
+# Default path — used when called directly from src/ (not via SDK)
+DEFAULT_TASK_PATH = "models/face_landmarker.task"
 
 
 class LandmarkExtractor:
@@ -40,30 +40,40 @@ class LandmarkExtractor:
     Tries MediaPipe Tasks API first.
     Falls back to OpenCV Haar if .task model file not present.
 
-    Usage:
+    Usage (direct):
         extractor = LandmarkExtractor()
-        data = extractor.extract(frame)
-        if data:
-            left_pts  = data["left_eye"]   # np.array (6,2)
-            right_pts = data["right_eye"]  # np.array (6,2)
+
+    Usage (SDK — model auto-downloaded from HuggingFace):
+        extractor = LandmarkExtractor(task_path="/path/from/model_manager")
+
+    Returns:
+        {"left_eye": np.array(6,2), "right_eye": np.array(6,2)}
+        or None if no face detected
     """
 
-    def __init__(self):
-        self.mode = None
+    def __init__(self, task_path: str = None):
+        """
+        Args:
+            task_path: path to face_landmarker.task file.
+                       If None, tries DEFAULT_TASK_PATH.
+                       SDK passes the HuggingFace cached path here.
+        """
+        self.task_path = task_path or DEFAULT_TASK_PATH
+        self.mode      = None
         self._init()
 
     def _init(self):
-        if os.path.exists(TASK_MODEL_PATH):
+        if os.path.exists(self.task_path):
             self._init_mediapipe()
         else:
-            print(f"  face_landmarker.task not found at {TASK_MODEL_PATH}")
+            print(f"  face_landmarker.task not found at {self.task_path}")
             print(f"  Using OpenCV Haar fallback for landmarks")
             self._init_haar()
 
     def _init_mediapipe(self):
         try:
             base_options = mp_python.BaseOptions(
-                model_asset_path=TASK_MODEL_PATH
+                model_asset_path=self.task_path      # ← uses resolved path
             )
             options = mp_vision.FaceLandmarkerOptions(
                 base_options=base_options,
@@ -103,12 +113,11 @@ class LandmarkExtractor:
             return self._extract_haar(frame)
 
     def _extract_mediapipe(self, frame: np.ndarray) -> dict | None:
-        h, w = frame.shape[:2]
-        rgb  = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+        h, w   = frame.shape[:2]
+        rgb    = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
         mp_img = mp.Image(image_format=mp.ImageFormat.SRGB, data=rgb)
 
         result = self.landmarker.detect(mp_img)
-
         if not result.face_landmarks:
             return None
 
@@ -128,12 +137,11 @@ class LandmarkExtractor:
     def _extract_haar(self, frame: np.ndarray) -> dict | None:
         """
         Approximate 6-point landmarks from Haar eye bounding boxes.
-        Less accurate than MediaPipe but works without internet/model files.
+        Less accurate than MediaPipe but works without the .task file.
         """
-        gray  = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
-        gray  = cv2.equalizeHist(gray)
+        gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+        gray = cv2.equalizeHist(gray)
 
-        # Detect face
         faces = self.face_cascade.detectMultiScale(
             gray, scaleFactor=1.1, minNeighbors=5, minSize=(80, 80)
         )
@@ -143,30 +151,26 @@ class LandmarkExtractor:
         fx, fy, fw, fh = max(faces, key=lambda f: f[2] * f[3])
         face_gray = gray[fy:fy+fh, fx:fx+fw]
 
-        # Detect eyes within face
         eyes = self.eye_cascade.detectMultiScale(
             face_gray, scaleFactor=1.1, minNeighbors=5, minSize=(20, 20)
         )
-
         if len(eyes) < 2:
             return None
 
-        # Take top 2 eyes, sort left to right
         eyes = sorted(eyes[:2], key=lambda e: e[0])
 
         def bbox_to_6pts(ex, ey, ew, eh):
-            """Synthetic 6-point landmark from eye bounding box."""
             cx = fx + ex + ew // 2
             cy = fy + ey + eh // 2
             hw = ew // 2
             hh = eh // 2
             return np.array([
-                [cx - hw,      cy      ],  # p1 left corner
-                [cx - hw // 2, cy - hh ],  # p2 upper left
-                [cx + hw // 2, cy - hh ],  # p3 upper right
-                [cx + hw,      cy      ],  # p4 right corner
-                [cx + hw // 2, cy + hh ],  # p5 lower right
-                [cx - hw // 2, cy + hh ],  # p6 lower left
+                [cx - hw,      cy      ],
+                [cx - hw // 2, cy - hh ],
+                [cx + hw // 2, cy - hh ],
+                [cx + hw,      cy      ],
+                [cx + hw // 2, cy + hh ],
+                [cx - hw // 2, cy + hh ],
             ], dtype=np.float32)
 
         return {
