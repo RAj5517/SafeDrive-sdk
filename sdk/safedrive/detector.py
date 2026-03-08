@@ -79,9 +79,10 @@ class DrowsinessDetector:
                 cnn_weight  = cnn_weight,
             )
         elif pipeline == "yolo":
-            raise NotImplementedError(
-                "YOLO pipeline coming in v0.2.0. "
-                "Use pipeline='mediapipe' for now."
+            from .pipelines.yolo_pipeline import YoloPipeline
+            self._pipeline = YoloPipeline(
+                model_path = model_path,
+                device     = device or "cuda",
             )
         else:
             raise ValueError(f"Unknown pipeline: '{pipeline}'. "

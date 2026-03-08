@@ -19,9 +19,9 @@ with open("README.md", "r", encoding="utf-8") as f:
 
 setup(
     name            = "safedrive-ai",
-    version         = "0.1.1",
+    version         = "0.2.0",
     author          = "SafeDrive AI",
-    description     = "Real-time driver drowsiness detection SDK",
+    description     = "Driver monitoring SDK - drowsiness, phone, seatbelt detection",
     long_description= long_description,
     long_description_content_type = "text/markdown",
     url             = "https://github.com/yourusername/safedrive-ai",
