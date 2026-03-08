@@ -1,10 +1,11 @@
 """
 setup.py
 ────────
-PyPI package config for safedrive-ai v0.1.0
+PyPI package config for safedrive-ai
 
 Install:
     pip install safedrive-ai
+    pip install safedrive-ai[yolo]
 
 Publish:
     pip install build twine
@@ -18,13 +19,20 @@ with open("README.md", "r", encoding="utf-8") as f:
     long_description = f.read()
 
 setup(
-    name            = "safedrive-ai",
-    version         = "0.2.0",
-    author          = "SafeDrive AI",
-    description     = "Driver monitoring SDK - drowsiness, phone, seatbelt detection",
-    long_description= long_description,
+    name             = "safedrive-ai",
+    version          = "0.2.1",
+    author           = "Sayan Raj",
+    author_email     = "",
+    description      = "Real-time driver monitoring SDK — drowsiness, phone, seatbelt and smoking detection",
+    long_description = long_description,
     long_description_content_type = "text/markdown",
-    url             = "https://github.com/yourusername/safedrive-ai",
+    url              = "https://github.com/RAj5517/SafeDrive-sdk",
+
+    project_urls = {
+        "Bug Tracker": "https://github.com/RAj5517/SafeDrive-sdk/issues",
+        "Models":      "https://huggingface.co/raj5517/safedrive-model",
+        "PyPI":        "https://pypi.org/project/safedrive-ai/",
+    },
 
     packages        = find_packages(),
     python_requires = ">=3.10",
@@ -35,12 +43,12 @@ setup(
         "torch>=2.0.0",
         "torchvision>=0.15.0",
         "numpy>=1.24.0",
-        "albumentations>=1.3.0",
+        "huggingface_hub>=0.20.0",
     ],
 
     extras_require = {
         "yolo": [
-            "ultralytics>=8.0.0",   # YOLOv8 — added in v0.2.0
+            "ultralytics>=8.0.0",
         ],
         "dev": [
             "pytest",
@@ -49,21 +57,24 @@ setup(
         ],
     },
 
+    license = "MIT",
+
     classifiers = [
         "Programming Language :: Python :: 3",
         "Programming Language :: Python :: 3.10",
         "Programming Language :: Python :: 3.11",
         "Programming Language :: Python :: 3.12",
-        "License :: OSI Approved :: MIT License",
         "Operating System :: OS Independent",
         "Topic :: Scientific/Engineering :: Artificial Intelligence",
         "Topic :: Software Development :: Libraries :: Python Modules",
         "Intended Audience :: Developers",
+        "Intended Audience :: Science/Research",
     ],
 
     keywords = [
         "drowsiness detection", "driver monitoring",
         "eye tracking", "computer vision", "mediapipe",
-        "yolo", "deep learning", "safety", "automotive"
+        "yolo", "yolov8", "deep learning", "safety",
+        "automotive", "PERCLOS", "fatigue detection",
     ],
 )

@@ -81,8 +81,12 @@ class DrowsinessDetector:
         elif pipeline == "yolo":
             from .pipelines.yolo_pipeline import YoloPipeline
             self._pipeline = YoloPipeline(
-                model_path = model_path,
-                device     = device or "cuda",
+                model_path      = model_path,
+                device          = device or "cuda",
+                detect_phone    = detect_phone,
+                detect_seatbelt = detect_seatbelt,
+                detect_smoking  = detect_smoking,
+                detect_yawn     = detect_yawn,
             )
         else:
             raise ValueError(f"Unknown pipeline: '{pipeline}'. "
@@ -93,12 +97,24 @@ class DrowsinessDetector:
             "eye_close_seconds": eye_close_seconds,
             "face_gone_seconds": face_gone_seconds,
             "head_tilt_degrees": head_tilt_degrees,
+            "detect_phone":      detect_phone,
+            "detect_seatbelt":   detect_seatbelt,
+            "detect_smoking":    detect_smoking,
+            "detect_yawn":       detect_yawn,
         })
+
+        # ── Feature flags (for HUD display) ──────────────────────────────────
+        self._detect_phone    = detect_phone
+        self._detect_seatbelt = detect_seatbelt
+        self._detect_smoking  = detect_smoking
+        self._detect_yawn     = detect_yawn
 
         # ── Frame callback ────────────────────────────────────────────────────
         self._on_frame_cbs: list[Callable] = []
 
-        print(f"SafeDrive v0.1.0 | pipeline={pipeline} | mode={alert_mode}")
+        print(f"SafeDrive v0.2.0 | pipeline={pipeline} | "
+              f"phone={detect_phone} seatbelt={detect_seatbelt} "
+              f"smoking={detect_smoking} yawn={detect_yawn}")
 
     # ── Callback decorators ───────────────────────────────────────────────────
 

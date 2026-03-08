@@ -72,15 +72,23 @@ class YoloPipeline(BasePipeline):
     """
 
     def __init__(self,
-                 model_path:  str   = None,
-                 device:      str   = None,
-                 conf:        float = CONF_THRESHOLD,
-                 iou:         float = IOU_THRESHOLD):
+                 model_path:      str   = None,
+                 device:          str   = None,
+                 conf:            float = CONF_THRESHOLD,
+                 iou:             float = IOU_THRESHOLD,
+                 detect_phone:    bool  = True,
+                 detect_seatbelt: bool  = True,
+                 detect_smoking:  bool  = True,
+                 detect_yawn:     bool  = True):
 
-        self.model_path = model_path
-        self.device     = device or "cuda"
-        self.conf       = conf
-        self.iou        = iou
+        self.model_path      = model_path
+        self.device          = device or "cuda"
+        self.conf            = conf
+        self.iou             = iou
+        self.detect_phone    = detect_phone
+        self.detect_seatbelt = detect_seatbelt
+        self.detect_smoking  = detect_smoking
+        self.detect_yawn     = detect_yawn
 
         self._model       = None
         self._mp_landmarker = None
@@ -204,21 +212,21 @@ class YoloPipeline(BasePipeline):
                 if cls_id in (CLS_EYE_OPEN, CLS_EYE_HALF, CLS_EYE_CLOSED):
                     eye_states.append((cls_id, conf))
 
-                elif cls_id == CLS_MOUTH_OPEN:
+                elif cls_id == CLS_MOUTH_OPEN and self.detect_yawn:
                     mouth_open = True
 
-                elif cls_id == CLS_PHONE:
+                elif cls_id == CLS_PHONE and self.detect_phone:
                     phone      = True
                     phone_conf = max(phone_conf, conf)
 
-                elif cls_id == CLS_CIGARETTE:
+                elif cls_id == CLS_CIGARETTE and self.detect_smoking:
                     cigarette = True
                     cig_conf  = max(cig_conf, conf)
 
-                elif cls_id == CLS_SEATBELT_ON:
+                elif cls_id == CLS_SEATBELT_ON and self.detect_seatbelt:
                     seatbelt_on = True
 
-                elif cls_id == CLS_SEATBELT_OFF:
+                elif cls_id == CLS_SEATBELT_OFF and self.detect_seatbelt:
                     if seatbelt_on is None:
                         seatbelt_on = False
 
@@ -343,14 +351,24 @@ class YoloPipeline(BasePipeline):
         cv2.addWeighted(ov, 0.55, frame, 0.45, 0, frame)
 
         W = (255,255,255)
+        def feat(enabled, detected, label_on, label_off, col_on, col_off):
+            if not enabled:
+                return (f"{label_on:<9}: disabled", (80, 80, 80))
+            if detected:
+                return (f"{label_on:<9}: {label_on.upper()}", col_on)
+            return (f"{label_on:<9}: {label_off}", col_off)
+
         lines = [
-            (f"Pipeline : YOLO",                           (180,180,255)),
-            (f"Eye      : {eye_state.upper():<8} score={score:.2f}", W),
-            (f"Mouth    : {'OPEN (yawn)' if mouth_open else 'closed'}", (0,220,255) if mouth_open else W),
-            (f"Phone    : {'DETECTED' if phone else 'clear'}",         (255,0,255) if phone else W),
-            (f"Cigarette: {'DETECTED' if cigarette else 'clear'}",     (200,0,200) if cigarette else W),
-            (f"Seatbelt : {'ON' if seatbelt_on else ('OFF' if seatbelt_on is False else 'n/a')}", (0,255,128) if seatbelt_on else ((0,100,255) if seatbelt_on is False else W)),
-            (f"Head     : tilt={tilt:.1f}°  nod={nod:.1f}°  FPS={fps:.1f}", W),
+            (f"Pipeline : YOLO v0.2.0",                                        (180,180,255)),
+            (f"Eye      : {eye_state.upper():<8} score={score:.2f}",            W),
+            feat(True,         mouth_open, "Mouth",     "closed",   (0,220,255), W),
+            feat(self.detect_phone,    phone,     "Phone",     "clear",    (255,0,255),  W),
+            feat(self.detect_smoking,  cigarette, "Cigarette", "clear",    (200,0,200),  W),
+            feat(self.detect_seatbelt,
+                 seatbelt_on is True, "Seatbelt",
+                 "OFF" if seatbelt_on is False else "n/a",
+                 (0,255,128), (0,100,255) if seatbelt_on is False else W),
+            (f"Head     : tilt={tilt:.1f}°  nod={nod:.1f}°  FPS={fps:.1f}",   W),
         ]
         for i, (text, col) in enumerate(lines):
             cv2.putText(frame, text, (12, 26 + i*21), font, 0.5, col, 1)
