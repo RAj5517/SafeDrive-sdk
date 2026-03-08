@@ -74,7 +74,7 @@ class MediaPipePipeline(BasePipeline):
 
         # ── Import after path setup ───────────────────────────────────────
         from landmark_extractor import LandmarkExtractor
-        from perclos import PERCLOSTracker
+        from safedrive.perclos import PERCLOSTracker
         from mobilenet_model import load_mobilenet
         from safedrive.model_manager import get_best_eye_model, get_model_path
 
