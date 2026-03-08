@@ -87,3 +87,20 @@ logs/
 !models/.gitkeep
 !sounds/.gitkeep
 !outputs/.gitkeep
+
+# Model weights
+*.pt
+*.pth
+
+# YOLO training outputs
+runs/
+
+# Data
+data/yolo_merged/
+data/yolo_webcam/
+data/roboflow/
+
+# Build
+sdk/dist/
+sdk/build/
+sdk/*.egg-info/
