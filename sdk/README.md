@@ -1,14 +1,18 @@
-# SafeDrive AI — Driver Drowsiness Detection SDK
+# SafeDrive AI
 
-Real-time driver drowsiness and distraction detection.  
-Built on MediaPipe + MobileNetV3 (v0.1.0) with YOLOv8 multi-feature detection coming in v0.2.0.
+Real-time driver monitoring SDK — drowsiness, phone, seatbelt, and smoking detection via webcam. No special hardware required.
+
+[![PyPI version](https://badge.fury.io/py/safedrive-ai.svg)](https://pypi.org/project/safedrive-ai/)
+[![HuggingFace](https://img.shields.io/badge/🤗-Models-yellow)](https://huggingface.co/raj5517/safedrive-model)
+[![GitHub](https://img.shields.io/badge/GitHub-SafeDrive--sdk-black)](https://github.com/RAj5517/SafeDrive-sdk)
 
 ---
 
 ## Install
 
 ```bash
-pip install safedrive-ai
+pip install safedrive-ai           # MediaPipe pipeline
+pip install safedrive-ai ultralytics  # + YOLO pipeline
 ```
 
 ---
@@ -18,7 +22,11 @@ pip install safedrive-ai
 ```python
 from safedrive import DrowsinessDetector
 
+# MediaPipe + MobileNet pipeline (CPU friendly)
 detector = DrowsinessDetector(pipeline="mediapipe")
+
+# YOLOv8 pipeline (all features: phone, seatbelt, cigarette)
+detector = DrowsinessDetector(pipeline="yolo")
 
 @detector.on_drowsy
 def handle(event):
@@ -27,76 +35,129 @@ def handle(event):
 detector.run(camera=0)
 ```
 
+Models auto-download from [HuggingFace](https://huggingface.co/raj5517/safedrive-model) on first run.
+
+---
+
+## Pipelines
+
+### `pipeline="mediapipe"` — MediaPipe + MobileNetV3
+
+Two-stage pipeline. MediaPipe extracts 468 face landmarks → EAR geometry formula → eye crop → MobileNetV3 classifier (97.99% accuracy). Best for CPU-only.
+
+### `pipeline="yolo"` — YOLOv8-nano
+
+Single forward pass detects all 9 classes simultaneously. Custom-trained on 28,593 images.
+
+| Metric | Value |
+|--------|-------|
+| mAP50 | 0.940 |
+| mAP50-95 | 0.793 |
+| Inference | 3.7ms/frame |
+| Model size | 6.3MB |
+
+---
+
+## Features
+
+| Feature | mediapipe | yolo |
+|---------|:---------:|:----:|
+| Eye state (3-class) | ✅ | ✅ |
+| Yawn detection | ✅ | ✅ |
+| Head pose | ✅ | ✅ |
+| PERCLOS tracking | ✅ | ✅ |
+| Phone detection | ❌ | ✅ |
+| Seatbelt monitoring | ❌ | ✅ |
+| Cigarette detection | ❌ | ✅ |
+
 ---
 
 ## Alert Levels
 
-| Level | State    | Trigger                              | Action              |
-|-------|----------|--------------------------------------|---------------------|
-| 1     | WARNING  | Eyes half-open 3s / yawn / head tilt | Soft beep           |
-| 2     | ALERT    | Eyes closed 2s / head nod            | Loud beep           |
-| 3     | CRITICAL | Face gone 2s / eyes closed 4s        | Continuous alarm    |
+```
+Level 1  WARNING   eyes half 3s / yawn / head tilt > 15°
+Level 2  ALERT     eyes closed 2s / head nod > 25°
+Level 3  CRITICAL  eyes closed 4s / face gone 2s
 
-**Separate alerts** (independent of drowsiness level):
-- **Phone detected** → instant distraction alert
-- **Seatbelt removed** → continuous safety alert
-- **Smoking detected** → instant distraction alert
-
----
-
-## Full API
-
-```python
-detector = DrowsinessDetector(
-    pipeline          = "mediapipe",  # "yolo" coming in v0.2.0
-    eye_close_seconds = 2.0,
-    face_gone_seconds = 2.0,
-    head_tilt_degrees = 15.0,
-    detect_phone      = True,
-    detect_seatbelt   = True,
-    detect_yawn       = True,
-    detect_smoking    = True,
-    show_window       = True,
-    ear_weight        = 0.5,
-    cnn_weight        = 0.5,
-)
-
-@detector.on_drowsy      # DrowsyEvent
-@detector.on_distraction # DistractionEvent
-@detector.on_safety      # SafetyEvent
-@detector.on_frame       # called every frame with annotated frame + FrameStats
-
-detector.run(camera=0)
-detector.stop()
-detector.reset_alert()   # manual reset after CRITICAL
+Phone / cigarette → instant DISTRACTION alert
+Seatbelt removed  → continuous SAFETY alert
 ```
 
 ---
 
-## Roadmap
+## Usage Examples
 
-| Version | Features                                          |
-|---------|---------------------------------------------------|
-| v0.1.0  | MediaPipe + MobileNetV3 drowsiness detection ✅   |
-| v0.2.0  | YOLOv8 pipeline + full multi-feature detection    |
-| v1.0.0  | Ensemble mode + benchmark tool + full docs        |
+### All event types
+
+```python
+detector = DrowsinessDetector(pipeline="yolo")
+
+@detector.on_drowsy
+def drowsy(event):
+    print(f"Level {event.level}: {event.message}")
+
+@detector.on_distraction
+def distraction(event):
+    print(f"{event.type} detected")   # "phone" or "smoking"
+
+@detector.on_safety
+def safety(event):
+    print(event.message)              # seatbelt events
+
+detector.run(camera=0)
+```
+
+### Disable features
+
+```python
+# Testing without seatbelt or cigarette
+detector = DrowsinessDetector(
+    pipeline        = "yolo",
+    detect_seatbelt = False,
+    detect_smoking  = False,
+)
+```
+
+### Custom thresholds
+
+```python
+detector = DrowsinessDetector(
+    pipeline           = "yolo",
+    eye_close_seconds  = 1.5,    # alert faster (default 2.0)
+    head_tilt_degrees  = 20.0,   # more lenient (default 15.0)
+)
+```
+
+### Headless
+
+```python
+detector = DrowsinessDetector(pipeline="yolo", show_window=False)
+
+@detector.on_frame
+def process(frame, stats):
+    # stats.eye_state, stats.fps, stats.alert_level, stats.perclos
+    pass
+
+detector.run()
+```
 
 ---
 
-## Pipeline Comparison
+## Changelog
 
-| Feature          | MediaPipe (v0.1.0) | YOLO (v0.2.0)  |
-|------------------|--------------------|----------------|
-| Eyes open/closed | ✅                 | ✅             |
-| Yawn detection   | ❌                 | ✅             |
-| Phone detection  | ❌                 | ✅             |
-| Seatbelt         | ❌                 | ✅             |
-| Smoking          | ❌                 | ✅             |
-| Head pose        | ✅ (both use MediaPipe landmarks) | ✅ |
-| Speed            | ~28 FPS            | ~24 FPS        |
+### v0.2.1
+- Feature disable flags (`detect_phone`, `detect_seatbelt`, `detect_smoking`, `detect_yawn`)
+
+### v0.2.0
+- YOLOv8-nano pipeline — phone, seatbelt, cigarette detection
+- mAP50 = 0.940 on 9-class custom dataset
+
+### v0.1.1
+- HuggingFace auto-download, local model cache
+
+### v0.1.0
+- Initial release — MediaPipe + MobileNetV3 pipeline
 
 ---
 
-## License
-
-MIT
+**Links:** [GitHub](https://github.com/RAj5517/SafeDrive-sdk) · [HuggingFace](https://huggingface.co/raj5517/safedrive-model) · [PyPI](https://pypi.org/project/safedrive-ai/)
