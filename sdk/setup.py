@@ -20,7 +20,7 @@ with open("README.md", "r", encoding="utf-8") as f:
 
 setup(
     name             = "safedrive-ai",
-    version          = "0.2.1",
+    version          = "0.2.2",
     author           = "Sayan Raj",
     author_email     = "",
     description      = "Real-time driver monitoring SDK — drowsiness, phone, seatbelt and smoking detection",
