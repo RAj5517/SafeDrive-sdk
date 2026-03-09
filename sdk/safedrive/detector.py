@@ -112,7 +112,7 @@ class DrowsinessDetector:
         # ── Frame callback ────────────────────────────────────────────────────
         self._on_frame_cbs: list[Callable] = []
 
-        print(f"SafeDrive v0.2.2 | pipeline={pipeline} | "
+        print(f"SafeDrive v0.2.3 | pipeline={pipeline} | "
               f"phone={detect_phone} seatbelt={detect_seatbelt} "
               f"smoking={detect_smoking} yawn={detect_yawn}")
 
