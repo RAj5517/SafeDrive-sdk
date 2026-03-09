@@ -371,4 +371,3 @@ class YoloPipeline(BasePipeline):
         if len(self._fps_buffer) < 2:
             return 0.0
         return 1.0 / (sum(self._fps_buffer) / len(self._fps_buffer))
-    
