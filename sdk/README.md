@@ -164,7 +164,7 @@ detector.run()
 
 ## Changelog
 
-### v0.2.2
+### v0.2.3
 - YOLO pipeline now hybrid: MediaPipe for eyes/yawn/head pose, YOLO for phone/seatbelt/cigarette
 - Continuous audio alerts via pygame — volume ramps with eye-closure duration
 - Blink ignore: closures < 500ms treated as natural blinks, no alarm
